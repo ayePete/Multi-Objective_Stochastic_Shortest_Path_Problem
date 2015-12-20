@@ -19,10 +19,10 @@ public class Test {
 
     public static Random rand = new Random();
     public static int limit = 30;
-    public static int GRAPH_SIZE = 30;
-    public static int EDGE_NO = 200;
+    public static int GRAPH_SIZE = 25;
+    public static int EDGE_NO = 50;
     public static int START = 1;
-    public static int END = 25;
+    public static int END = 20;
     public static boolean inGraph[][] = new boolean[GRAPH_SIZE][GRAPH_SIZE];
     public static void main(String[] args){
 

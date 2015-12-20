@@ -208,20 +208,6 @@ public class Main {
                 System.out.println();
                 pw.println();
             }
-
-            System.out.println("\nImproved Min Costs");
-            for (String s: improvedMinCosts){
-                System.out.println(s);
-            }
-
-            System.out.println("\nImproved Min Variances");
-            for (String s: improvedMinVars){
-                System.out.println(s);
-            }
-
-            System.out.println();
-            System.out.println("Mininmum Var = " + minVariance);
-            System.out.println("Mininmum eCost = " + minExpected);
             pw.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -479,7 +465,7 @@ public class Main {
 
     public static void readDistGraph(){
         try {
-            BufferedReader br = new BufferedReader(new FileReader(new File("rand_graph_dists.txt")));
+            BufferedReader br = new BufferedReader(new FileReader(new File("rand_graph_dists2.txt")));
             String s = br.readLine();
             System.out.println(s);
             String[] sHolder = s.split("\\s");
