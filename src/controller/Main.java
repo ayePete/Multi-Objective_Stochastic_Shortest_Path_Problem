@@ -8,10 +8,7 @@ package controller;
 import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import javafx.util.Pair;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 //import com.rits.cloning.*;
@@ -52,31 +49,31 @@ public class Main {
     public static double c1 = 1.48;
     public static double c2 = 0.5;
     public static final int SEED = 12;
-    public static Random rand = new Random(SEED);
+    public static Random rand = new Random();
     public static ArrayList<Particle> swarm;
     public static Particle dummyParticle;
     public static List<Particle> externalArchive;
     public static ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> GRAPH;
 
-    public static int GRAPHSIZE = 50;
-    public static int EDGE_NO = 100;
-    public static int STARTNODE = 1;
-    public static int ENDNODE = 40;
+    public static int GRAPHSIZE;
+    public static int EDGE_NO;
+    public static int STARTNODE;
+    public static int ENDNODE;
     public static final int NO_OF_RUNS = 10;
     public static final int NO_OF_ITERATIONS = 50;
     public static final int SWARM_SIZE = 25;
-    public static final double EPSILON = 0.02;
+    public static final double EPSILON = 0.01;
     public static final double epsPlus = EPSILON + 1;
     public static double minExpected;
     public static double minVariance;
     public static int k = 0;
-    public static final double MUTATION_RATE = 0.3;
+    public static final double MUTATION_RATE = 0.2;
     public static ArrayList<String> improvedMinCosts = new ArrayList<>();
     public static ArrayList<String> improvedMinVars = new ArrayList<>();
 
 
-    public static double eCostGraph[][] = new double[GRAPHSIZE][GRAPHSIZE];
-    public static double varianceGraph[][] = new double[GRAPHSIZE][GRAPHSIZE];
+    public static double eCostGraph[][];// = new double[GRAPHSIZE][GRAPHSIZE];
+    public static double varianceGraph[][];// = new double[GRAPHSIZE][GRAPHSIZE];
 
     public static void main(String[] args) {
         dummyParticle = new Particle();
@@ -91,128 +88,144 @@ public class Main {
     }
 
     public static void psoSPP(){
-        double r1, r2;
-        GRAPH = randGraph();
+        try {
+            PrintWriter pw = new PrintWriter(new File("result_1.txt"));
 
-        for (k = 0; k < NO_OF_RUNS; k++) {
-            System.out.println("Run " + (k+1) + ":");
-            init();
-            for (int i = 0; i < NO_OF_ITERATIONS; i++) {
-                for (Particle p : swarm) {
-                    r1 = round(rand.nextDouble(), DP);
-                    r2 = round(rand.nextDouble(), DP);
+            double r1, r2;
+            //GRAPH = randGraph();
 
-                    /** Selection of Leader **/
-                    Particle leader = selectLeader(p);
+            for (k = 0; k < NO_OF_RUNS; k++) {
+                improvedMinCosts.add("New run");
+                improvedMinVars.add("New run");
+                System.out.println("Run " + (k+1) + ":");
+                pw.println("Run " + (k+1) + ":");
+                init();
+                for (int i = 0; i < NO_OF_ITERATIONS; i++) {
+                    for (Particle p : swarm) {
+                        r1 = round(rand.nextDouble(), DP);
+                        r2 = round(rand.nextDouble(), DP);
 
-                    // Get differences between X and pBest and X and gBest
-                    ArrayList<Double[]> gDiff = p.subtractPosition(leader.getPosition());
-                    ArrayList<Double[]> pDiff = p.subtractPosition(p.getPBest());
+                        /** Selection of Leader **/
+                        Particle leader = selectLeader(p);
 
-                    // Get magnitude of each difference
-                    int pDiffMagnitude = (int) round(c1 * r1 * pDiff.size(), 0);
-                    int gDiffMagnitude = (int) round(c2 * r2 * gDiff.size(), 0);
+                        // Get differences between X and pBest and X and gBest
+                        ArrayList<Double[]> gDiff = p.subtractPosition(leader.getPosition());
+                        ArrayList<Double[]> pDiff = p.subtractPosition(p.getPBest());
 
-                    // Generate new velocity
-                    Double[] newPosition = new Double[GRAPHSIZE];
-                    Arrays.fill(newPosition, -1.0);
-                    for (int j = 0; j < gDiffMagnitude; j++) {
-                        int index = rand.nextInt(gDiff.size());
-                        Double[] diffVal = gDiff.get(index);
-                        newPosition[diffVal[0].intValue()] = diffVal[1];
-                        gDiff.remove(index);
-                        if(gDiff.isEmpty())
-                            break;
-                    }
-                    for (int j = 0; j < pDiffMagnitude; j++) {
-                        int index = rand.nextInt(pDiff.size());
-                        Double[] diffVal = pDiff.get(index);
-                        int pDiffIndex = diffVal[0].intValue();
-                        if (newPosition[pDiffIndex] == -1.0) {
-                            newPosition[pDiffIndex] = diffVal[1];
+                        // Get magnitude of each difference
+                        int pDiffMagnitude = (int) round(c1 * r1 * pDiff.size(), 0);
+                        int gDiffMagnitude = (int) round(c2 * r2 * gDiff.size(), 0);
+
+                        // Generate new velocity
+                        Double[] newPosition = new Double[GRAPHSIZE];
+                        Arrays.fill(newPosition, -1.0);
+                        for (int j = 0; j < gDiffMagnitude; j++) {
+                            int index = rand.nextInt(gDiff.size());
+                            Double[] diffVal = gDiff.get(index);
+                            newPosition[diffVal[0].intValue()] = diffVal[1];
+                            gDiff.remove(index);
+                            if(gDiff.isEmpty())
+                                break;
                         }
-                        pDiff.remove(index);
-                        if(pDiff.isEmpty())
-                            break;
-                    }
-                    ArrayList<Integer> emptyIndices = new ArrayList<>();
-                    for (int j = 0; j < newPosition.length; j++) {
-                        if (newPosition[j] < 0) {
-                            emptyIndices.add(j);
+                        for (int j = 0; j < pDiffMagnitude; j++) {
+                            int index = rand.nextInt(pDiff.size());
+                            Double[] diffVal = pDiff.get(index);
+                            int pDiffIndex = diffVal[0].intValue();
+                            if (newPosition[pDiffIndex] == -1.0) {
+                                newPosition[pDiffIndex] = diffVal[1];
+                            }
+                            pDiff.remove(index);
+                            if(pDiff.isEmpty())
+                                break;
+                        }
+                        ArrayList<Integer> emptyIndices = new ArrayList<>();
+                        for (int j = 0; j < newPosition.length; j++) {
+                            if (newPosition[j] < 0) {
+                                emptyIndices.add(j);
+                            }
+                        }
+
+                        int prevVel = rand.nextInt(GRAPHSIZE) + 1;
+                        int velCount = 0;
+                        for (Integer j : emptyIndices) {
+                            newPosition[j] = p.getVelocity().get(j);
+                            velCount++;
+                            if(emptyIndices.size() == GRAPHSIZE && velCount >= prevVel)
+                                break;
+                        }
+                        for (int j = 0; j < newPosition.length; j++){
+                            if(newPosition[j] < 0){
+                                newPosition[j] = p.getPosition().get(j);
+                            }
+                        }
+
+
+                        ArrayList<Double> newPositionList = new ArrayList<>(Arrays.asList(newPosition));
+
+                        /** Mutation **/
+                        if (rand.nextDouble() < MUTATION_RATE) {
+                            int randIndex1 = rand.nextInt(newPositionList.size());
+                            int randIndex2 = rand.nextInt(newPositionList.size());
+                            double toMutate1 = newPositionList.get(randIndex1);
+                            double toMutate2 = newPositionList.get(randIndex2);
+                            if (toMutate1 <= 1.5) {
+                                newPositionList.set(randIndex1, 2.9);
+                                newPositionList.set(randIndex2, 0.1);
+                            }
+                            else {
+                                newPositionList.set(randIndex1, 0.1);
+                                newPositionList.set(randIndex2, 2.9);
+                            }
+                        }
+
+                        /** Update of pBest **/
+                        double prevVariance = Particle.getPathVar(Particle.decodePath(p.getPBest()));
+                        double prevExpectedCost = Particle.getPathCost(Particle.decodePath(p.getPBest()));
+                        p.setPosition(newPositionList);
+                        p.generateVelocity();
+
+                        if (p.getExpectedCost()/epsPlus <= prevExpectedCost || p.getVariance()/epsPlus <= prevVariance) {
+                            p.updatePBest();
+                            if(!isInExternalArchive(p))
+                                externalArchive.add(new Particle(p));
                         }
                     }
-
-                    int prevVel = rand.nextInt(GRAPHSIZE) + 1;
-                    int velCount = 0;
-                    for (Integer j : emptyIndices) {
-                        newPosition[j] = p.getVelocity().get(j);
-                        velCount++;
-                        if(emptyIndices.size() == GRAPHSIZE && velCount >= prevVel)
-                            break;
-                    }
-                    for (int j = 0; j < newPosition.length; j++){
-                        if(newPosition[j] < 0){
-                            newPosition[j] = p.getPosition().get(j);
-                        }
-                    }
-
-
-                    ArrayList<Double> newPositionList = new ArrayList<>(Arrays.asList(newPosition));
-
-                    /** Mutation **/
-                    if (rand.nextDouble() < MUTATION_RATE) {
-                        int randIndex1 = rand.nextInt(newPositionList.size());
-                        int randIndex2 = rand.nextInt(newPositionList.size());
-                        double toMutate1 = newPositionList.get(randIndex1);
-                        double toMutate2 = newPositionList.get(randIndex2);
-                        if (toMutate1 <= 1.5) {
-                            newPositionList.set(randIndex1, 2.9);
-                            newPositionList.set(randIndex2, 0.1);
-                        }
-                        else {
-                            newPositionList.set(randIndex1, 0.1);
-                            newPositionList.set(randIndex2, 2.9);
-                        }
-                    }
-
-                    /** Update of pBest **/
-                    double prevVariance = Particle.getPathVar(Particle.decodePath(p.getPBest()));
-                    double prevExpectedCost = Particle.getPathCost(Particle.decodePath(p.getPBest()));
-                    p.setPosition(newPositionList);
-                    p.generateVelocity();
-
-                    if (p.getExpectedCost()/epsPlus <= prevExpectedCost || p.getVariance()/epsPlus <= prevVariance) {
-                        p.updatePBest();
-                        if(!isInExternalArchive(p))
-                            externalArchive.add(new Particle(p));
-                    }
+                    updateExternalArchive();
                 }
-                updateExternalArchive();
+                double dijkstra = dijkstra(eCostGraph, STARTNODE, ENDNODE);
+                double dijkstra2 = dijkstra(varianceGraph, STARTNODE, ENDNODE);
+
+                System.out.println("Dijkstra cost: " + dijkstra);
+                pw.println("Dijkstra cost: " + dijkstra);
+                System.out.println("Dijkstra variance: " + dijkstra2);
+                pw.println("Dijkstra variance: " + dijkstra2);
+                System.out.println("Result: ");
+                pw.println("Result: ");
+                for (Particle p: externalArchive){
+                    System.out.println(p.getPath() + ": Expected Cost = " + p.getExpectedCost() + " Variance = " + p.getVariance());
+                    pw.println(p.getPath() + ": Expected Cost = " + p.getExpectedCost() + " Variance = " + p.getVariance());
+                }
+                System.out.println();
+                pw.println();
             }
-            double dijkstra = dijkstra(eCostGraph, STARTNODE, ENDNODE);
-            double dijkstra2 = dijkstra(varianceGraph, STARTNODE, ENDNODE);
 
-            System.out.println("Dijkstra cost: " + dijkstra);
-            System.out.println("Dijkstra variance: " + dijkstra2);
-            System.out.println("Result: ");
-            for (Particle p: externalArchive){
-                System.out.println(p.getPath() + ": Expected Cost = " + p.getExpectedCost() + " Variance = " + p.getVariance());
+            System.out.println("\nImproved Min Costs");
+            for (String s: improvedMinCosts){
+                System.out.println(s);
             }
-        }
 
-        System.out.println("\nImproved Min Costs");
-        for (String s: improvedMinCosts){
-            System.out.println(s);
-        }
+            System.out.println("\nImproved Min Variances");
+            for (String s: improvedMinVars){
+                System.out.println(s);
+            }
 
-        System.out.println("\nImproved Min Variances");
-        for (String s: improvedMinVars){
-            System.out.println(s);
+            System.out.println();
+            System.out.println("Mininmum Var = " + minVariance);
+            System.out.println("Mininmum eCost = " + minExpected);
+            pw.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
-
-        System.out.println();
-        System.out.println("Mininmum Var = " + minVariance);
-        System.out.println("Mininmum eCost = " + minExpected);
     }
 
     private static boolean isInExternalArchive(Particle p) {
@@ -248,7 +261,9 @@ public class Main {
 
     private static void init() {
         //GRAPH = randGraph();
-        System.out.println(GRAPH);
+        //System.out.println(GRAPH);
+        readDistGraph();
+        System.out.println(Arrays.deepToString(eCostGraph));
         minExpected = Double.MAX_VALUE;
         minVariance = Double.MAX_VALUE;
         swarm = new ArrayList<>();
@@ -259,6 +274,8 @@ public class Main {
         System.out.println(swarm);
         computeNonDominated();
         for (Particle p: swarm)
+            p.updateSigma();
+        for (Particle p: externalArchive)
             p.updateSigma();
     }
 
@@ -329,7 +346,10 @@ public class Main {
 //                    System.out.println("Removing: " + p1 + " " + p1.getExpectedCost() + " " + p1.getVariance());
 //                    System.out.println("Dominated by: " + p2 + " " + p2.getExpectedCost() + " " + p2.getVariance());
                     externalArchive.remove(p1);
+                    i = 0;
                     continue outerLoop;
+                } else if(p1.getExpectedCost()/epsPlus < p2.getExpectedCost() && p1.getVariance()/epsPlus < p2.getVariance()){
+                    externalArchive.remove(p2);
                 }
             }
         }
@@ -344,7 +364,7 @@ public class Main {
     }
 
     public static ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> randGraph() {
-        Random rand = new Random(SEED);
+        Random rand = new Random();
         ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> g = new ArrayList<>(GRAPHSIZE);
         for (int i = 0; i < GRAPHSIZE ; i++) {
             ArrayList<ArrayList<Pair<Double, Double>>> row = new ArrayList<>();
@@ -457,6 +477,80 @@ public class Main {
         return g;
     }
 
+    public static void readDistGraph(){
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(new File("rand_graph_dists.txt")));
+            String s = br.readLine();
+            System.out.println(s);
+            String[] sHolder = s.split("\\s");
+            GRAPHSIZE = Integer.parseInt(sHolder[0]);
+            EDGE_NO = Integer.parseInt(sHolder[1]);
+            eCostGraph = new double[GRAPHSIZE][GRAPHSIZE];
+            varianceGraph = new double[GRAPHSIZE][GRAPHSIZE];
+
+            sHolder = br.readLine().split("\\s");
+            STARTNODE = Integer.parseInt(sHolder[0]);
+            ENDNODE = Integer.parseInt(sHolder[1]);
+
+            while (br.ready()) {
+                s = br.readLine();
+                s = s.replaceAll("[ \\n\\x0B\\f\\r]","");
+                sHolder = s.split("\\t");
+                //System.out.println(Arrays.toString(sHolder));
+                String[] iHolder = sHolder[0].split(",");
+                int iIndex = Integer.parseInt(iHolder[0].substring(1));
+                int jIndex = Integer.parseInt(iHolder[1].substring(0, iHolder[1].indexOf(")")));
+
+                double res[] = computeMeanVariance(sHolder[1]);
+                eCostGraph[iIndex-1][jIndex-1] = res[0];
+                varianceGraph[iIndex-1][jIndex-1] = res[1];
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static double[] computeMeanVariance(String x){
+        x = x.replaceAll("\\s+","");
+        char dist = x.charAt(0);
+        String s = x.substring(x.indexOf('(')+1, x.indexOf(')'));
+        int a, b, c;
+        double mean;
+        double variance;
+        switch(dist){
+            case 'E':
+                a = Integer.parseInt(s);
+                mean = Math.pow(a, -1);
+                variance = Math.pow(a, -1) * Math.log(2);
+                return new double[] {mean, variance};
+            case 'U':
+                String[] sH = s.split(",");
+                a = Integer.parseInt(sH[0]);
+                b = Integer.parseInt(sH[1]);
+                mean = 0.5 * (a + b);
+                variance = (1.0/12) * Math.pow(b-a, 2);
+                return new double[] {mean, variance};
+            case 'N':
+                sH = s.split(",");
+                a = Integer.parseInt(sH[0]);
+                b = Integer.parseInt(sH[1]);
+                return new double[] {a, b};
+            case 'T':
+                sH = s.split(",");
+                a = Integer.parseInt(sH[0]);
+                b = Integer.parseInt(sH[1]);
+                c = Integer.parseInt(sH[2]);
+                mean = (a + b + c) / 3.0;
+                variance = (Math.pow(a, 2) + Math.pow(b, 2) + Math.pow(c, 2) - (a * b)
+                            - (a * c) - (b * c)) / 18.0;
+                return new double[] {mean, variance};
+            default:
+                return null;
+
+        }
+    }
+
     /** Imported Dijkstra Algorithm with Priority Queue **/
     private static double dijkstra(double[][] G, int i, int j){
         //Get the number of vertices in G
@@ -559,7 +653,7 @@ public class Main {
     }
 
     public static ArrayList<Double> generateDistribution(int size, int max){
-        Random rand = new Random(SEED);
+        Random rand = new Random();
         Set<Double> set = new TreeSet<>();
         set.add(0.0);
         while (set.size() < size) {

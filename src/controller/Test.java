@@ -8,7 +8,7 @@ package controller;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -20,7 +20,9 @@ public class Test {
     public static Random rand = new Random();
     public static int limit = 30;
     public static int GRAPH_SIZE = 30;
-    public static int EDGE_NO = 50;
+    public static int EDGE_NO = 200;
+    public static int START = 1;
+    public static int END = 25;
     public static boolean inGraph[][] = new boolean[GRAPH_SIZE][GRAPH_SIZE];
     public static void main(String[] args){
 
@@ -32,13 +34,19 @@ public class Test {
         }*/
 
         generateRandGraphDistributions();
+        Main.readDistGraph();
+        System.out.println(Arrays.deepToString(Main.eCostGraph));
+        System.out.println(Arrays.deepToString(Main.varianceGraph));
+
     }
 
     public static void generateRandGraphDistributions(){
         try {
             int selectedDist = 0;
             int counter = 0;
-            PrintWriter pw = new PrintWriter(new File("rand_graph_dists.txt"));
+            PrintWriter pw = new PrintWriter(new File("rand_graph_dists2.txt"));
+            pw.println(GRAPH_SIZE + " " +  EDGE_NO);
+            pw.println(START + " " +  END);
             for (int i = 0; i < GRAPH_SIZE; i++) {
                 int j = rand.nextInt(GRAPH_SIZE);
                 if(i == j) {
@@ -48,7 +56,7 @@ public class Test {
                 if(inGraph[i][j])
                     continue;
 
-                selectedDist = rand.nextInt(3);
+                selectedDist = rand.nextInt(4);
                 pw.println(printGraph(i, j, selectedDist));
                 inGraph[i][j] = true;
 
@@ -65,10 +73,10 @@ public class Test {
                     continue;
                 }
 
-                selectedDist = rand.nextInt(3);
-                printGraph(i, j, selectedDist);
+                selectedDist = rand.nextInt(4);
+                pw.println(printGraph(i, j, selectedDist));
                 counter++;
-                if (counter == EDGE_NO) {
+                if (counter >= EDGE_NO) {
                     break;
                 }
             }
@@ -86,6 +94,8 @@ public class Test {
     }
 
     public static String generateRandUniformDist(){
+        //System.out.println("Generating U...");
+
         int a = rand.nextInt(limit - 5);
         int b = rand.nextInt(limit);
         while (a >= b){
@@ -96,14 +106,15 @@ public class Test {
     }
 
     public static String generateRandTriangularDist(){
-        int a = limit;
+        //System.out.println("Generating T...");
+        int a = rand.nextInt(limit - 10);
         int b = rand.nextInt(limit);
         int c = rand.nextInt(limit);
         while (a >= b){
-            a = 1 + rand.nextInt(limit);
+            b = 1 + rand.nextInt(limit);
         }
 
-        while (c > b || a < c){
+        while (c > b || c < a){
             c = rand.nextInt(limit);
         }
         String ret = "T(" +  a + ", " + b + ", " + c + ")";

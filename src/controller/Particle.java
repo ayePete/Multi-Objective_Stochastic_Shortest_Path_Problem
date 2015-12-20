@@ -129,24 +129,22 @@ public class Particle {
         int from = i.next();
         while (i.hasNext()){
             int to = i.next();
-            ArrayList<Pair<Double, Double>> costDistribution = Main.GRAPH.get(from).get(to);
-            pathCost += getDistCost(costDistribution);
+            pathCost += Main.eCostGraph[from][to];
             from = to;
         }
         return pathCost;
     }
 
     public static double getPathVar(Stack<Integer> path){
-        double pathCost = 0;
+        double pathVar = 0;
         Iterator<Integer> i = path.iterator();
         int from = i.next();
         while (i.hasNext()){
             int to = i.next();
-            ArrayList<Pair<Double, Double>> costDistribution = Main.GRAPH.get(from).get(to);
-            pathCost += getDistVariance(costDistribution);
+            pathVar += Main.varianceGraph[from][to];
             from = to;
         }
-        return pathCost;
+        return pathVar;
     }
     
     public static double getDistCost(ArrayList<Pair<Double, Double>> dist){
@@ -189,13 +187,13 @@ public class Particle {
 
             // Select node with least biased cost from adjacent nodes
             for (int i = 0; i < Main.GRAPHSIZE; i++) {
-                if (invalid.contains(i) || path.contains(i) || Main.GRAPH.get(currNode).get(i).get(0).getKey() < 0)
+                if (invalid.contains(i) || path.contains(i) || Main.eCostGraph[currNode][i] == 0)
                     continue;
                 // Bias edge cost by weight values of both nodes adjacent to it
 //                double biasedCost = biases.get(currNode) * biases.get(i)
 //                        * (getDistCost(Main.GRAPH.get(currNode).get(i)) + getDistVariance(Main.GRAPH.get(currNode).get(i)));
-                double biasedCost = biases.get(currNode) * biases.get(i)
-                        * getDistCost(Main.GRAPH.get(currNode).get(i));
+                double biasedCost = biases.get(currNode) * biases.get(i);
+                        //* 0.7 * Main.eCostGraph[currNode][i] + 0.3 * Main.varianceGraph[currNode][i] ;
                 // Get edge with minimum biased cost
                 if(biasedCost < minBiasedCost){
                     nextNode = i;
