@@ -29,8 +29,8 @@ public class Particle {
         position = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             double value = Main.round(Math.pow(2.5, rand.nextGaussian()), 1);
-            /*if(value > 3.0)
-                value = 3.0;*/
+            if(value > 3.0)
+                value = 3.0;
             position.add(value);
         }
         pBest = (ArrayList) position.clone();
@@ -104,9 +104,9 @@ public class Particle {
             double bias = Main.round(Math.pow(2.5, rand.nextGaussian()), 1);
             
             // Clamp bias at 3.0
-            /*if (bias > 3.0) {
+            if (bias > 3.0) {
                 bias = 3.0;
-            }*/
+            }
             velocity.add(bias);
         }
     }
@@ -193,7 +193,7 @@ public class Particle {
                     continue;
                 // Bias edge cost by weight values of both nodes adjacent to it
 //                double biasedCost = biases.get(currNode) * biases.get(i)
-//                        * (w1*getDistCost(Main.GRAPH.get(currNode).get(i)) + w2 * getDistVariance(Main.GRAPH.get(currNode).get(i)));
+//                        * (getDistCost(Main.GRAPH.get(currNode).get(i)) + getDistVariance(Main.GRAPH.get(currNode).get(i)));
                 double biasedCost = biases.get(currNode) * biases.get(i)
                         * getDistCost(Main.GRAPH.get(currNode).get(i));
                 // Get edge with minimum biased cost
@@ -291,7 +291,7 @@ public class Particle {
 
     /** @Override
     public Particle clone(){
-        Particle p = new Particle(Main.GRAPHSIZE);
+        Particle p = new Particle(Main.GRAPH_SIZE);
         p.setFitness(this.fitness);
 
     }

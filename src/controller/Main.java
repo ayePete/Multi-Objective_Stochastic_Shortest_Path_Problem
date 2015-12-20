@@ -41,7 +41,6 @@ class Data implements Comparable<Data> {
     public boolean equals(Data other) {
         return priority == other.priority;
     }
-    // also implement equals() and hashCode()
 }
 
 
@@ -52,25 +51,29 @@ public class Main {
 
     public static double c1 = 1.48;
     public static double c2 = 0.5;
-    public static Random rand = new Random();
+    public static final int SEED = 12;
+    public static Random rand = new Random(SEED);
     public static ArrayList<Particle> swarm;
     public static Particle dummyParticle;
     public static List<Particle> externalArchive;
     public static ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> GRAPH;
 
-    public static int GRAPHSIZE = 6;
-    public static int EDGE_NO = 10;
+    public static int GRAPHSIZE = 50;
+    public static int EDGE_NO = 100;
     public static int STARTNODE = 1;
-    public static int ENDNODE = 3;
-    public static final int NO_OF_RUNS = 1;
+    public static int ENDNODE = 40;
+    public static final int NO_OF_RUNS = 10;
     public static final int NO_OF_ITERATIONS = 50;
-    public static final int SWARM_SIZE = 5;
+    public static final int SWARM_SIZE = 25;
     public static final double EPSILON = 0.02;
     public static final double epsPlus = EPSILON + 1;
-    public static double minExpected = Double.MAX_VALUE;
-    public static double minVariance = Double.MAX_VALUE;
+    public static double minExpected;
+    public static double minVariance;
     public static int k = 0;
     public static final double MUTATION_RATE = 0.3;
+    public static ArrayList<String> improvedMinCosts = new ArrayList<>();
+    public static ArrayList<String> improvedMinVars = new ArrayList<>();
+
 
     public static double eCostGraph[][] = new double[GRAPHSIZE][GRAPHSIZE];
     public static double varianceGraph[][] = new double[GRAPHSIZE][GRAPHSIZE];
@@ -89,6 +92,8 @@ public class Main {
 
     public static void psoSPP(){
         double r1, r2;
+        GRAPH = randGraph();
+
         for (k = 0; k < NO_OF_RUNS; k++) {
             System.out.println("Run " + (k+1) + ":");
             init();
@@ -189,11 +194,25 @@ public class Main {
 
             System.out.println("Dijkstra cost: " + dijkstra);
             System.out.println("Dijkstra variance: " + dijkstra2);
+            System.out.println("Result: ");
+            for (Particle p: externalArchive){
+                System.out.println(p.getPath() + ": Expected Cost = " + p.getExpectedCost() + " Variance = " + p.getVariance());
+            }
         }
-        System.out.println("Result: ");
-        for (Particle p: externalArchive){
-            System.out.println(p.getPosition() + "->" + p.getPath() + ": Expected Cost = " + p.getExpectedCost() + " Variance = " + p.getVariance());
+
+        System.out.println("\nImproved Min Costs");
+        for (String s: improvedMinCosts){
+            System.out.println(s);
         }
+
+        System.out.println("\nImproved Min Variances");
+        for (String s: improvedMinVars){
+            System.out.println(s);
+        }
+
+        System.out.println();
+        System.out.println("Mininmum Var = " + minVariance);
+        System.out.println("Mininmum eCost = " + minExpected);
     }
 
     private static boolean isInExternalArchive(Particle p) {
@@ -228,8 +247,10 @@ public class Main {
     }
 
     private static void init() {
-        GRAPH = randGraph();
+        //GRAPH = randGraph();
         System.out.println(GRAPH);
+        minExpected = Double.MAX_VALUE;
+        minVariance = Double.MAX_VALUE;
         swarm = new ArrayList<>();
         for (int i = 0; i < SWARM_SIZE; i++) {
             Particle p = new Particle(GRAPHSIZE);
@@ -251,20 +272,24 @@ public class Main {
             Particle p1 = swarm.get(i);
 
             /** Update min objective values for sigma value calculation **/
-            if (p1.getExpectedCost() < minExpected)
+            if (p1.getExpectedCost() < minExpected) {
                 minExpected = p1.getExpectedCost();
-            if (p1.getVariance() < minVariance)
+                improvedMinCosts.add("iExpected Cost: " + p1.getExpectedCost() + " Variance: " + p1.getVariance());
+            }
+            if (p1.getVariance() < minVariance) {
                 minVariance = p1.getVariance();
+                improvedMinVars.add("iExpected Cost: " + p1.getExpectedCost() + " Variance: " + p1.getVariance());
+            }
 
 
             for (int j = 0; j < swarm.size(); j++) {
                 Particle p2 = swarm.get(j);
                 if(p1.equals(p2))
                     continue;
-                System.out.println("p1: " + p1);
+                /*System.out.println("p1: " + p1);
                 System.out.println(p1.getExpectedCost() + ", " + p1.getVariance());
                 System.out.println("p2: " + p2);
-                System.out.println(p2.getExpectedCost() + ", " + p2.getVariance());
+                System.out.println(p2.getExpectedCost() + ", " + p2.getVariance());*/
                 /** Checking for epsilon-non-dominance **/
                 //System.out.println("Checked");
                 if(p2.getExpectedCost() < p1.getExpectedCost() && p2.getVariance() < p1.getVariance()) {
@@ -275,19 +300,25 @@ public class Main {
             //System.out.println("Added");
             if(!isInExternalArchive(p1) || externalArchive.isEmpty()) {
                 externalArchive.add(new Particle(p1));
-                System.out.println("Added " + p1 + " " + p1.getExpectedCost() + " " + p1.getVariance());
+                //ystem.out.println("Added " + p1 + " " + p1.getExpectedCost() + " " + p1.getVariance());
             }
         }
     }
+
     private static void updateExternalArchive(){
         outerLoop: for (int i = 0; i < externalArchive.size(); i++) {
             Particle p1 = externalArchive.get(i);
 
             /** Update min objective values for sigma value calculation **/
-            if (p1.getExpectedCost() < minExpected)
+            if (p1.getExpectedCost() < minExpected) {
                 minExpected = p1.getExpectedCost();
-            if (p1.getVariance() < minVariance)
+                improvedMinCosts.add("vExpected Cost: " + p1.getExpectedCost() + " Variance: " + p1.getVariance());
+            }
+            if (p1.getVariance() < minVariance) {
                 minVariance = p1.getVariance();
+                improvedMinVars.add("vExpected Cost: " + p1.getExpectedCost() + " Variance: " + p1.getVariance());
+            }
+
 
             for (int j = 0; j < externalArchive.size(); j++) {
                 Particle p2 = externalArchive.get(j);
@@ -295,8 +326,8 @@ public class Main {
                     continue;
                 /** Checking for and removing epsilon-dominated candidates **/
                 if(p2.getExpectedCost()/epsPlus < p1.getExpectedCost() && p2.getVariance()/epsPlus < p1.getVariance()){
-                    System.out.println("Removing: " + p1 + " " + p1.getExpectedCost() + " " + p1.getVariance());
-                    System.out.println("Dominated by: " + p2 + " " + p2.getExpectedCost() + " " + p2.getVariance());
+//                    System.out.println("Removing: " + p1 + " " + p1.getExpectedCost() + " " + p1.getVariance());
+//                    System.out.println("Dominated by: " + p2 + " " + p2.getExpectedCost() + " " + p2.getVariance());
                     externalArchive.remove(p1);
                     continue outerLoop;
                 }
@@ -313,7 +344,7 @@ public class Main {
     }
 
     public static ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> randGraph() {
-        Random rand = new Random();
+        Random rand = new Random(SEED);
         ArrayList<ArrayList<ArrayList<Pair<Double, Double>>>> g = new ArrayList<>(GRAPHSIZE);
         for (int i = 0; i < GRAPHSIZE ; i++) {
             ArrayList<ArrayList<Pair<Double, Double>>> row = new ArrayList<>();
@@ -528,7 +559,7 @@ public class Main {
     }
 
     public static ArrayList<Double> generateDistribution(int size, int max){
-        Random rand = new Random(12);
+        Random rand = new Random(SEED);
         Set<Double> set = new TreeSet<>();
         set.add(0.0);
         while (set.size() < size) {
